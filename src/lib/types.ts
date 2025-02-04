@@ -4,3 +4,10 @@ export interface ExtractedItem {
   "Unit Price": number | null;
   Total: number | null;
 }
+
+export interface NormalizedItem {
+  requestItem: string;
+  quantity: number;
+  unitPrice?: number;
+  total?: number;
+}

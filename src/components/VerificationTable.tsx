@@ -14,26 +14,28 @@ import {
   CircularProgress
 } from '@mui/material';
 import axios from 'axios';
-import { ExtractedItem } from '@/lib/types';
+import { NormalizedItem } from '@/lib/types';
 
 interface VerificationTableProps {
-  extractedItems: ExtractedItem[];
+  extractedItems: NormalizedItem[];
   onConfirm: (confirmedMatches: { [key: string]: string }) => void;
 }
 
 const VerificationTable: React.FC<VerificationTableProps> = ({ extractedItems, onConfirm }) => {
-  // Store candidate matches for each item, keyed by "Request Item"
+  // Store candidate matches keyed by the normalized request item (string)
   const [matches, setMatches] = useState<{ [key: string]: any[] }>({});
-  // Store the user-selected match for each item
+  // Store the user-selected match for each normalized request item
   const [selectedMatches, setSelectedMatches] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
     extractedItems.forEach(async (item) => {
-      const queryText = item["Request Item"];
+      const queryText = item.requestItem; // Using the normalized property
       try {
+        // Call the matching API with the normalized request item as query
         const response = await axios.post('/api/match', { queries: [queryText] });
         const candidateMatches = response.data.results[queryText] || [];
         setMatches((prev) => ({ ...prev, [queryText]: candidateMatches }));
+        // Set default selection (first candidate) if available
         if (candidateMatches.length > 0) {
           setSelectedMatches((prev) => ({ ...prev, [queryText]: candidateMatches[0].match }));
         }
@@ -48,6 +50,7 @@ const VerificationTable: React.FC<VerificationTableProps> = ({ extractedItems, o
   };
 
   const handleConfirm = () => {
+    // Pass the confirmed matches back to the parent component (Home page)
     onConfirm(selectedMatches);
   };
 
@@ -59,13 +62,13 @@ const VerificationTable: React.FC<VerificationTableProps> = ({ extractedItems, o
       <Table>
         <TableHead>
           <TableRow>
-            <TableCell>Extracted Item</TableCell>
+            <TableCell>Request Item</TableCell>
             <TableCell>Candidate Matches</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {extractedItems.map((item, index) => {
-            const key = item["Request Item"];
+            const key = item.requestItem;
             const candidateMatches = matches[key];
             return (
               <TableRow key={index}>

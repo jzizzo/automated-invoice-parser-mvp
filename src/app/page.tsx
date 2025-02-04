@@ -3,19 +3,19 @@ import React, { useState } from 'react';
 import { Container, Typography, Box } from '@mui/material';
 import FileUpload from '@/components/FileUpload';
 import VerificationTable from '@/components/VerificationTable';
-import CSVDownloadButton from '@/components/CVSDownloadButton';
-import { ExtractedItem } from '@/lib/types';
+import CSVDownloadButton from '@/components/CSVDownloadButton';
+import { NormalizedItem } from '@/lib/types';
+import { normalizeExtractedData } from '@/lib/normalize';
 
 const HomePage: React.FC = () => {
-  // extractedData is an array of ExtractedItem objects
-  const [extractedData, setExtractedData] = useState<ExtractedItem[] | null>(null);
-  // Store the URL for the PDF preview
+  // Now we store an array of NormalizedItem objects
+  const [extractedData, setExtractedData] = useState<NormalizedItem[] | null>(null);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
-  // Store the confirmed matches from verification
   const [confirmedMatches, setConfirmedMatches] = useState<{ [key: string]: string } | null>(null);
 
-  const handleExtractionComplete = (data: any, fileUrl: string) => {
-    setExtractedData(data);
+  const handleExtractionComplete = (rawData: any, fileUrl: string) => {
+    const normalized = normalizeExtractedData(rawData);
+    setExtractedData(normalized);
     setPdfPreviewUrl(fileUrl);
   };
 
@@ -23,7 +23,6 @@ const HomePage: React.FC = () => {
     setConfirmedMatches(matches);
   };
 
-  // Transform confirmed matches object into an array for CSV export.
   const csvData =
     confirmedMatches &&
     Object.entries(confirmedMatches).map(([requestItem, confirmedMatch]) => ({
