@@ -10,37 +10,35 @@ import {
   MenuItem,
   Button,
   Box,
-  Typography
+  Typography,
+  CircularProgress
 } from '@mui/material';
 import axios from 'axios';
 import { ExtractedItem } from '@/lib/types';
 
 interface VerificationTableProps {
   extractedItems: ExtractedItem[];
+  onConfirm: (confirmedMatches: { [key: string]: string }) => void;
 }
 
-const VerificationTable: React.FC<VerificationTableProps> = ({ extractedItems }) => {
-  // Store candidate matches for each extracted item keyed by its "Request Item"
+const VerificationTable: React.FC<VerificationTableProps> = ({ extractedItems, onConfirm }) => {
+  // Store candidate matches for each item, keyed by "Request Item"
   const [matches, setMatches] = useState<{ [key: string]: any[] }>({});
-  // Store user-selected match for each extracted item
+  // Store the user-selected match for each item
   const [selectedMatches, setSelectedMatches] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
-    // For every extracted item, call the matching API route using the "Request Item" as query
     extractedItems.forEach(async (item) => {
       const queryText = item["Request Item"];
       try {
-        // Call our matching API; here, we send a single-item batch for simplicity
         const response = await axios.post('/api/match', { queries: [queryText] });
-        // The API is expected to return results keyed by the query text
         const candidateMatches = response.data.results[queryText] || [];
         setMatches((prev) => ({ ...prev, [queryText]: candidateMatches }));
-        // Set default selection if matches exist
         if (candidateMatches.length > 0) {
           setSelectedMatches((prev) => ({ ...prev, [queryText]: candidateMatches[0].match }));
         }
       } catch (error) {
-        console.error(`Matching API error for item "${queryText}":`, error);
+        console.error(`Error fetching matches for "${queryText}":`, error);
       }
     });
   }, [extractedItems]);
@@ -50,8 +48,7 @@ const VerificationTable: React.FC<VerificationTableProps> = ({ extractedItems })
   };
 
   const handleConfirm = () => {
-    console.log('Confirmed Matches:', selectedMatches);
-    // Future step: trigger CSV export or further processing.
+    onConfirm(selectedMatches);
   };
 
   return (
@@ -69,25 +66,30 @@ const VerificationTable: React.FC<VerificationTableProps> = ({ extractedItems })
         <TableBody>
           {extractedItems.map((item, index) => {
             const key = item["Request Item"];
+            const candidateMatches = matches[key];
             return (
               <TableRow key={index}>
                 <TableCell>{key}</TableCell>
                 <TableCell>
-                  <Select
-                    value={selectedMatches[key] || ''}
-                    onChange={(e) => handleSelectChange(key, e.target.value)}
-                    fullWidth
-                  >
-                    {matches[key] && matches[key].length > 0 ? (
-                      matches[key].map((matchObj: any, idx: number) => (
-                        <MenuItem key={idx} value={matchObj.match}>
-                          {matchObj.match} (Score: {matchObj.score})
-                        </MenuItem>
-                      ))
-                    ) : (
-                      <MenuItem value="">No matches found</MenuItem>
-                    )}
-                  </Select>
+                  {candidateMatches === undefined ? (
+                    <CircularProgress size={24} />
+                  ) : (
+                    <Select
+                      value={selectedMatches[key] || ''}
+                      onChange={(e) => handleSelectChange(key, e.target.value)}
+                      fullWidth
+                    >
+                      {candidateMatches.length > 0 ? (
+                        candidateMatches.map((matchObj: any, idx: number) => (
+                          <MenuItem key={idx} value={matchObj.match}>
+                            {matchObj.match} (Score: {matchObj.score})
+                          </MenuItem>
+                        ))
+                      ) : (
+                        <MenuItem value="">No matches found</MenuItem>
+                      )}
+                    </Select>
+                  )}
                 </TableCell>
               </TableRow>
             );
