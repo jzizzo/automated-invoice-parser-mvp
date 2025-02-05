@@ -1,70 +1,107 @@
 "use client";
-import React, { useState } from 'react';
-import { Container, Typography, Box } from '@mui/material';
-import FileUpload from '@/components/FileUpload';
-import VerificationTable from '@/components/VerificationTable';
+import React, { useState, useEffect } from 'react';
+import {
+  Container,
+  Typography,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Button,
+  Box,
+} from '@mui/material';
+import axios from 'axios';
+import Link from 'next/link';
 import CSVDownloadButton from '@/components/CSVDownloadButton';
-import { NormalizedItem } from '@/lib/types';
-import { normalizeExtractedData } from '@/lib/normalize';
 
-const HomePage: React.FC = () => {
-  // Now we store an array of NormalizedItem objects
-  const [extractedData, setExtractedData] = useState<NormalizedItem[] | null>(null);
-  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
-  const [confirmedMatches, setConfirmedMatches] = useState<{ [key: string]: string } | null>(null);
+interface Order {
+  id: number;
+  date: string;
+  requestUrl: string;
+  responseUrl: string;
+}
 
-  const handleExtractionComplete = (rawData: any, fileUrl: string) => {
-    const normalized = normalizeExtractedData(rawData);
-    setExtractedData(normalized);
-    setPdfPreviewUrl(fileUrl);
+const DashboardPage: React.FC = () => {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [csvData, setCsvData] = useState<any[]>([]);
+
+  const fetchOrders = async () => {
+    try {
+      const response = await axios.get('/api/orders');
+      setOrders(response.data.orders);
+      if (response.data.orders.length > 0) {
+        const csvData = response.data.orders.map((order: Order) => ({
+          ID: order.id,
+          Date: order.date,
+          Request: order.requestUrl,
+          Response: order.responseUrl,
+        }));
+        setCsvData(csvData);
+      } else {
+        setCsvData([]);
+      }
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      setOrders([]);
+      setCsvData([]);
+    }
   };
 
-  const handleVerificationConfirm = (matches: { [key: string]: string }) => {
-    setConfirmedMatches(matches);
-  };
-
-  const csvData =
-    confirmedMatches &&
-    Object.entries(confirmedMatches).map(([requestItem, confirmedMatch]) => ({
-      "Request Item": requestItem,
-      "Confirmed Match": confirmedMatch,
-    }));
+  useEffect(() => {
+    fetchOrders();
+  }, []);
 
   return (
-    <Container sx={{ py: 4 }}>
-      <Typography variant="h4" align="center" gutterBottom>
-        Document Processing MVP
+    <Container>
+      <Typography variant="h4" gutterBottom>
+        Purchase Orders Dashboard
       </Typography>
-      <FileUpload onExtractionComplete={handleExtractionComplete} />
-
-      {pdfPreviewUrl && (
-        <Box sx={{ mt: 4 }}>
-          <Typography variant="h6">PDF Preview:</Typography>
-          <iframe
-            src={pdfPreviewUrl}
-            style={{ width: '100%', height: '500px', border: 'none' }}
-            title="PDF Preview"
-          ></iframe>
-        </Box>
-      )}
-
-      {extractedData && (
+      {orders.length === 0 ? (
+        <Typography variant="h6">
+          There are currently no orders yet.
+        </Typography>
+      ) : (
         <>
-          <Typography variant="h6" sx={{ mt: 4 }}>
-            Verify Matches
-          </Typography>
-          <VerificationTable extractedItems={extractedData} onConfirm={handleVerificationConfirm} />
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Order ID</TableCell>
+                <TableCell>Date</TableCell>
+                <TableCell>Request</TableCell>
+                <TableCell>Response</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {orders.map((order) => (
+                <TableRow key={order.id}>
+                  <TableCell>{order.id}</TableCell>
+                  <TableCell>{order.date}</TableCell>
+                  <TableCell>
+                    <Link href={order.requestUrl}>
+                      <Button variant="contained" size="small">
+                        View Request
+                      </Button>
+                    </Link>
+                  </TableCell>
+                  <TableCell>
+                    <Link href={order.responseUrl}>
+                      <Button variant="contained" size="small">
+                        View Response
+                      </Button>
+                    </Link>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          <Box sx={{ mt: 2 }}>
+            <CSVDownloadButton data={csvData} />
+          </Box>
         </>
-      )}
-
-      {confirmedMatches && csvData && (
-        <Box sx={{ mt: 4 }}>
-          <Typography variant="h6">Export Verified Matches</Typography>
-          <CSVDownloadButton data={csvData} />
-        </Box>
       )}
     </Container>
   );
 };
 
-export default HomePage;
+export default DashboardPage;

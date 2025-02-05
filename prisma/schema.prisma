@@ -1,0 +1,32 @@
+// prisma/schema.prisma
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Order {
+  id           Int      @id @default(autoincrement())
+  date         DateTime @default(now())
+  requestUrl   String
+  responseUrl  String
+  // orderItems will store an array of order item objects as JSON.
+  orderItems   Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model ConfirmedMatch {
+  id             Int      @id @default(autoincrement())
+  requestItem    String
+  confirmedMatch String
+  quantity       Int
+  unitPrice      Float?
+  total          Float?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
