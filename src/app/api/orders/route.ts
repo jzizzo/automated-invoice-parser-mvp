@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { NextRequest, NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 
 // GET: Retrieve all orders
 export async function GET() {
   try {
     const orders = await prisma.order.findMany({
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
     return NextResponse.json({ orders });
   } catch (error: any) {
@@ -18,12 +18,15 @@ export async function POST(request: NextRequest) {
   try {
     const { orderItems, requestUrl, responseUrl } = await request.json();
     if (!orderItems || !Array.isArray(orderItems)) {
-      return NextResponse.json({ error: 'Order items are required' }, { status: 400 });
+      return NextResponse.json(
+        { error: "Order items are required" },
+        { status: 400 }
+      );
     }
     const newOrder = await prisma.order.create({
       data: {
-        requestUrl: requestUrl || '',
-        responseUrl: responseUrl || '',
+        requestUrl: requestUrl || "",
+        responseUrl: responseUrl || "",
         orderItems: orderItems,
       },
     });

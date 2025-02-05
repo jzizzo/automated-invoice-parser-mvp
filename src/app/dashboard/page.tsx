@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Container,
   Typography,
@@ -12,9 +12,9 @@ import {
   Button,
   IconButton,
   Box,
-} from '@mui/material';
-import axios from 'axios';
-import DeleteIcon from '@mui/icons-material/Delete';
+} from "@mui/material";
+import axios from "axios";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 interface ConfirmedMatch {
   id: number;
@@ -29,14 +29,14 @@ interface ConfirmedMatch {
 
 const Dashboard: React.FC = () => {
   const [matches, setMatches] = useState<ConfirmedMatch[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
 
   const fetchMatches = async () => {
     try {
-      const res = await axios.get('/api/confirmedMatches');
+      const res = await axios.get("/api/confirmedMatches");
       setMatches(res.data.matches);
     } catch (error) {
-      console.error('Error fetching confirmed matches:', error);
+      console.error("Error fetching confirmed matches:", error);
     }
   };
 
@@ -49,7 +49,7 @@ const Dashboard: React.FC = () => {
       await axios.delete(`/api/confirmedMatches?id=${id}`);
       fetchMatches();
     } catch (error) {
-      console.error('Error deleting match:', error);
+      console.error("Error deleting match:", error);
     }
   };
 
@@ -93,7 +93,10 @@ const Dashboard: React.FC = () => {
               <TableCell>{match.unitPrice}</TableCell>
               <TableCell>{match.total}</TableCell>
               <TableCell>
-                <IconButton onClick={() => handleDelete(match.id)} color="error">
+                <IconButton
+                  onClick={() => handleDelete(match.id)}
+                  color="error"
+                >
                   <DeleteIcon />
                 </IconButton>
                 {/* Additional actions (such as edit) could be added here */}
