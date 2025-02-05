@@ -1,3 +1,4 @@
+// src/app/page.tsx
 "use client";
 import React, { useState, useEffect } from 'react';
 import {
@@ -20,31 +21,19 @@ interface Order {
   date: string;
   requestUrl: string;
   responseUrl: string;
+  orderItems: any; // This should be an array of order items (stored as JSON)
 }
 
 const DashboardPage: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [csvData, setCsvData] = useState<any[]>([]);
 
   const fetchOrders = async () => {
     try {
       const response = await axios.get('/api/orders');
       setOrders(response.data.orders);
-      if (response.data.orders.length > 0) {
-        const csvData = response.data.orders.map((order: Order) => ({
-          ID: order.id,
-          Date: order.date,
-          Request: order.requestUrl,
-          Response: order.responseUrl,
-        }));
-        setCsvData(csvData);
-      } else {
-        setCsvData([]);
-      }
     } catch (error) {
       console.error('Error fetching orders:', error);
       setOrders([]);
-      setCsvData([]);
     }
   };
 
@@ -62,21 +51,33 @@ const DashboardPage: React.FC = () => {
           There are currently no orders yet.
         </Typography>
       ) : (
-        <>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Order ID</TableCell>
-                <TableCell>Date</TableCell>
-                <TableCell>Request</TableCell>
-                <TableCell>Response</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {orders.map((order) => (
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Order ID</TableCell>
+              <TableCell>Date</TableCell>
+              <TableCell>Request</TableCell>
+              <TableCell>Response</TableCell>
+              <TableCell>Download CSV</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {orders.map((order) => {
+              // If order.orderItems is an array of objects with fields like:
+              // requestItem, confirmedMatch, quantity, unitPrice, total
+              const csvData = Array.isArray(order.orderItems)
+                ? order.orderItems.map((item: any) => ({
+                    "Request Item": item.requestItem,
+                    "Quantity": item.quantity,
+                    "Unit Price": item.unitPrice,
+                    "Total": item.total,
+                    "Confirmed Match": item.confirmedMatch,
+                  }))
+                : [];
+              return (
                 <TableRow key={order.id}>
                   <TableCell>{order.id}</TableCell>
-                  <TableCell>{order.date}</TableCell>
+                  <TableCell>{new Date(order.date).toLocaleString()}</TableCell>
                   <TableCell>
                     <Link href={order.requestUrl}>
                       <Button variant="contained" size="small">
@@ -91,14 +92,18 @@ const DashboardPage: React.FC = () => {
                       </Button>
                     </Link>
                   </TableCell>
+                  <TableCell>
+                    {csvData.length > 0 ? (
+                      <CSVDownloadButton data={csvData} filename={`order-${order.id}.csv`} />
+                    ) : (
+                      <Typography variant="caption">No items</Typography>
+                    )}
+                  </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          <Box sx={{ mt: 2 }}>
-            <CSVDownloadButton data={csvData} />
-          </Box>
-        </>
+              );
+            })}
+          </TableBody>
+        </Table>
       )}
     </Container>
   );

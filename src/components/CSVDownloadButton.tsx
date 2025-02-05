@@ -5,11 +5,12 @@ import { Button } from '@mui/material';
 
 interface CSVDownloadButtonProps {
   data: any[];
+  filename?: string;
 }
 
-const CSVDownloadButton: React.FC<CSVDownloadButtonProps> = ({ data }) => {
+const CSVDownloadButton: React.FC<CSVDownloadButtonProps> = ({ data, filename = 'download.csv' }) => {
   return (
-    <CSVLink data={data} filename="orders.csv" style={{ textDecoration: 'none' }}>
+    <CSVLink data={data} filename={filename} style={{ textDecoration: 'none' }}>
       <Button variant="contained" color="primary">
         Download CSV
       </Button>
